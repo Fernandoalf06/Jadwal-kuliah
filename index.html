@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Class Schedule - 4IA16</title>
+  
+  <!-- Meta PWA -->
+  <meta name="theme-color" content="#A91D3A" />
+  <meta name="description" content="Aplikasi Jadwal Kelas Interaktif untuk 4IA16" />
+  
+  <!-- Perbaikan Path: Menggunakan ./ untuk referensi relatif -->
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: "#A91D3A",
+              '50': '#fef2f4',
+              '100': '#fee6ea',
+              '200': '#fccfd9',
+              '300': '#f9aab9',
+              '400': '#f47993',
+              '500': '#ea5475',
+              '600': '#d5375a',
+              '700': '#b42749',
+              '800': '#94223d',
+              '900': '#7c2138',
+              '950': '#440e1b',
+            },
+            "background-light": "#f8fafc",
+            "background-dark": "#0f172a",
+            "warning": {
+              DEFAULT: "#f59e0b", // amber-500
+              '100': '#fef3c7', // amber-100
+              '800': '#92400e', // amber-800
+              '900': '#78350f', // amber-900
+            }
+          },
+          fontFamily: {
+            display: ["Poppins", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.5rem",
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 10px 0px rgba(59, 130, 246, 0)' },
+              '50%': { boxShadow: '0 0 10px 3px rgba(59, 130, 246, 0.7)' },
+            },
+            slideIn: {
+              'from': { transform: 'translateY(100%)', opacity: '0' },
+              'to': { transform: 'translateY(0)', opacity: '1' },
+            },
+            fadeOut: {
+              'from': { opacity: '1' },
+              'to': { opacity: '0', transform: 'translateY(20px)' },
+            },
+            todoSlideIn: {
+              'from': { opacity: '0', transform: 'translateX(-20px)' },
+              'to': { opacity: '1', transform: 'translateX(0)' },
+            },
+            todoFadeOut: {
+              'from': { opacity: '1', transform: 'scale(1)' },
+              'to': { opacity: '0', transform: 'scale(0.9)' },
+            }
+          },
+          animation: {
+            pulseGlow: 'pulseGlow 2s ease-in-out infinite',
+            slideIn: 'slideIn 0.3s ease-out forwards',
+            fadeOut: 'fadeOut 0.5s ease-in forwards 2.5s',
+            todoSlideIn: 'todoSlideIn 0.3s ease-out forwards',
+            todoFadeOut: 'todoFadeOut 0.3s ease-in forwards',
+          }
+        },
+      },
+    };
+  </script>
+  <!-- style.css akan dimuat dari link di atas -->
+</head>
+
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-700 dark:text-slate-300 antialiased">
+  
+  <!-- Banner Kelas Langsung -->
+  <div id="live-class-banner" class="hidden sticky top-0 z-30">
+    <div class="bg-blue-600 text-white p-4 shadow-lg animate-slideIn">
+      <div class="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div class="mb-3 sm:mb-0">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            </span>
+            <span class="font-semibold uppercase text-sm">SEDANG BERLANGSUNG</span>
+          </div>
+          <h3 id="live-banner-subject" class="text-xl font-bold mt-1"></h3>
+          <p id="live-banner-details" class="text-sm opacity-90"></p>
+        </div>
+        <div class="flex-shrink-0 flex gap-2">
+          <a id="live-banner-link" href="#" target="_blank" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white text-blue-700 rounded-md shadow-sm hover:bg-blue-100 text-sm font-medium">
+            <span class="material-symbols-outlined">link</span>
+            Buka Link
+          </a>
+          <button id="live-banner-notes" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-md shadow-sm hover:bg-blue-800 text-sm font-medium">
+            <span class="material-symbols-outlined">note</span>
+            Catatan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Details Modal -->
+  <div id="details-modal" class="modal-overlay fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden" aria-labelledby="details-modal-title" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-lg bg-white dark:bg-slate-900 rounded-lg shadow-xl overflow-hidden" style="transform: scale(0.95); opacity: 0;">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <h2 id="details-modal-title" class="text-lg font-semibold text-slate-900 dark:text-slate-100">Detail Mata Kuliah</h2>
+        <button id="close-details-modal-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <!-- Subject Title -->
+      <div class="p-4 pb-0">
+          <h3 id="details-modal-subject-title" class="font-medium text-primary-700 dark:text-primary-400 text-lg"></h3>
+      </div>
+      
+      <!-- Tab Navigation -->
+      <div class="border-b border-slate-200 dark:border-slate-700 px-4">
+        <nav class="-mb-px flex gap-4">
+          <button id="tab-btn-notes" class="tab-btn active" data-tab="notes">
+            Catatan
+          </button>
+          <button id="tab-btn-todos" class="tab-btn" data-tab="todos">
+            Daftar Tugas
+          </button>
+        </nav>
+      </div>
+      
+      <!-- Tab Content -->
+      <div>
+        <!-- Notes Panel -->
+        <div id="notes-panel" class="p-4">
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Simpan link, pengingat, atau info penting. Catatan tersimpan otomatis di browser Anda.</p>
+          <textarea id="modal-notes-textarea" class="w-full h-48 p-3 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Tulis catatan di sini..."></textarea>
+          <div class="flex justify-end pt-4">
+            <button id="save-notes-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:ring-offset-background-dark text-sm font-medium">
+              Simpan Catatan
+            </button>
+          </div>
+        </div>
+        
+        <!-- Todo Panel -->
+        <div id="todo-panel" class="p-4 hidden">
+          <!-- Add New Todo Form -->
+          <form id="add-todo-form" class="mb-4 space-y-3">
+            <div class="flex gap-2">
+              <input type="text" id="new-todo-input" class="flex-1 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Tugas baru..."/>
+              <button id="add-todo-btn" type="submit" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:ring-offset-background-dark text-sm font-medium">
+                Tambah
+              </button>
+            </div>
+            <div>
+              <label for="new-todo-deadline" class="text-sm font-medium text-slate-700 dark:text-slate-300">Deadline (Opsional)</label>
+              <input type="date" id="new-todo-deadline" class="mt-1 w-full border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" />
+            </div>
+          </form>
+          
+          <!-- Todo List -->
+          <div id="todo-list-container" class="h-64 overflow-y-auto space-y-3 pr-2">
+            <!-- Todo items will be injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+        <input type="hidden" id="details-modal-class-id" />
+        <button id="close-details-modal-btn-bottom" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-md shadow-sm hover:bg-slate-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:ring-offset-background-dark text-sm font-medium">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden">
+    <div id="toast-content" class="animate-slideIn bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-medium px-4 py-3 rounded-md shadow-lg flex items-center gap-2">
+      <span id="toast-icon" class="material-symbols-outlined">check_circle</span>
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <div class="min-h-screen p-4 sm:p-6 lg:p-8">
+    <div class="mx-auto">
+      
+      <!-- Header -->
+      <header class="mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-center sm:items-start text-center sm:text-left">
+          <div>
+            <h1 class="text-4xl font-bold text-slate-900 dark:text-slate-100">Jadwal Kelas 4IA16</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-2">Panduan interaktif untuk kelas mingguan Anda.</p>
+          </div>
+          <!-- Dark Mode Toggle -->
+          <button id="dark-mode-toggle" class="mt-4 sm:mt-0 p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle dark mode">
+            <span class="material-symbols-outlined" id="dark-mode-icon">light_mode</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Controls -->
+      <div class="mb-6 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          
+          <!-- Search -->
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <input class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" id="search-all" name="search-all" placeholder="Cari mata kuliah atau dosen..." type="text" />
+          </div>
+          
+          <!-- View Toggle -->
+          <div class="flex flex-col sm:flex-row items-center justify-end gap-3">
+            <div class="p-1 bg-slate-100 dark:bg-slate-800 rounded-lg btn-toggle flex items-center">
+              <button data-view="daily" class="px-3 py-1 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors">Daily</button>
+              <button data-view="weekly" class="px-3 py-1 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors active">Weekly</button>
+              <button data-view="tasks" class="px-3 py-1 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors">Tugas</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Daily View Selector (hidden by default) -->
+        <div id="daily-view-controls" class="hidden mt-4">
+            <label for="day-select" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Pilih Hari</label>
+            <select id="day-select" class="w-full max-w-xs border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+                <option value="1">Senin</option>
+                <option value="2">Selasa</option>
+                <option value="3">Rabu</option>
+                <option value="4">Kamis</option>
+                <option value="5">Jumat</option>
+                <option value="6">Sabtu</option>
+                <option value="0">Minggu</option>
+            </select>
+        </div>
+      </div>
+
+      <!-- Schedule Grid -->
+      <main>
+        <div id="schedule-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <!-- Class cards will be injected here by JavaScript -->
+        </div>
+        
+        <!-- All Tasks View -->
+        <div id="tasks-view" class="hidden max-w-4xl mx-auto space-y-6">
+          <!-- Tasks will be injected here by JavaScript -->
+        </div>
+        
+        <div id="no-results" class="hidden text-center py-12">
+          <span class="material-symbols-outlined text-6xl text-slate-400 dark:text-slate-600">search_off</span>
+          <h3 class="mt-4 text-xl font-semibold text-slate-800 dark:text-slate-200">Tidak Ada Hasil</h3>
+          <p class="mt-1 text-slate-500 dark:text-slate-400">Coba kata kunci lain atau sesuaikan filter Anda.</p>
+        </div>
+      </main>
+      
+    </div>
+  </div>
+
+  <!-- Perbaikan Path: Menggunakan ./ untuk referensi relatif -->
+  <script type="module" src="./script.js"></script>
+  
+</body>
+</html>
+
