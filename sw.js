@@ -17,6 +17,16 @@ const CACHE_FILES = [
   'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js',
 ];
 
+// File inti aplikasi lokal Anda
+const APP_SHELL_FILES = [
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './manifest.json'
+];
+
+
 // Event: Install Service Worker
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Menginstal...');
@@ -28,19 +38,28 @@ self.addEventListener('install', (event) => {
         // fetch() mungkin gagal untuk beberapa resource eksternal jika ada masalah jaringan
         // Kita akan coba cache satu per satu dan abaikan jika gagal
         const promises = CACHE_FILES.map(fileUrl => {
-            return fetch(fileUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Gagal fetch: ${fileUrl}`);
-                    }
-                    return cache.put(fileUrl, response);
-                })
+            // Buat request baru untuk menghindari masalah CORS saat caching
+            const request = new Request(fileUrl, { mode: 'no-cors' });
+            return fetch(request)
+                .then(response => cache.put(fileUrl, response))
                 .catch(err => {
                     console.warn(`Service Worker: Gagal cache ${fileUrl} - ${err.message}`);
                 });
         });
         
-        return Promise.all(promises);
+        // Caching file app shell dengan cara standar
+        const appShellPromises = APP_SHELL_FILES.map(fileUrl => {
+            return fetch(fileUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Gagal fetch: ${fileUrl}`);
+                    return cache.put(fileUrl, response);
+                })
+                .catch(err => {
+                     console.warn(`Service Worker: Gagal cache file app shell ${fileUrl} - ${err.message}`);
+                });
+        });
+        
+        return Promise.all([...promises, ...appShellPromises]);
       })
       .then(() => {
         self.skipWaiting(); // Aktifkan service worker baru segera
@@ -71,61 +90,89 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Hanya tangani permintaan GET
   if (event.request.method !== 'GET') {
-    return;
+    return; // Abaikan POST, PUT, dll. (termasuk API Firestore)
   }
-  
-  // Strategi: Cache first, then network (untuk file inti)
-  // Cek apakah permintaan ada di daftar cache kita
-  const url = new URL(event.request.url);
-  const isCoreFile = CACHE_FILES.includes(url.pathname) || CACHE_FILES.includes(event.request.url);
 
-  if (isCoreFile) {
+  const url = new URL(event.request.url);
+  
+  // Cek apakah ini file app shell (berdasarkan path relatif)
+  // Perbaiki logika pengecekan path
+  const requestPath = url.pathname;
+  let isAppShell = false;
+  
+  if (requestPath === '/' || requestPath.endsWith('/index.html')) {
+    isAppShell = true;
+  } else if (APP_SHELL_FILES.some(file => requestPath.endsWith(file.substring(1)))) {
+    isAppShell = true;
+  }
+
+  // Strategi: Cache First (hanya untuk file inti aplikasi)
+  if (isAppShell) {
     event.respondWith(
       caches.match(event.request)
-        .then((cachedResponse) => {
+        .then(cachedResponse => {
           if (cachedResponse) {
-            // Jika ada di cache, gunakan dari cache
-            // console.log('Service Worker: Mengambil dari cache:', event.request.url);
-            return cachedResponse;
+            return cachedResponse; // Sajikan dari cache
           }
-          
           // Jika tidak ada di cache, ambil dari jaringan
           return fetch(event.request)
-            .then((networkResponse) => {
-              // (Opsional) Simpan respons baru ke cache
-              // caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
+            .then(networkResponse => {
+              // Simpan ke cache untuk lain kali
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(event.request, networkResponse.clone());
+              });
               return networkResponse;
-            })
-            .catch(() => {
-              // Jika jaringan gagal, (misalnya offline)
-              console.error('Service Worker: Gagal mengambil dari jaringan:', event.request.url);
-              // Anda bisa mengembalikan fallback offline di sini jika perlu
             });
         })
     );
-  } else {
-    // Untuk permintaan lain (misalnya ke API Firebase), selalu gunakan jaringan
-    // Biarkan browser menanganinya secara normal
-    event.respondWith(fetch(event.request));
+    return;
   }
+
+  // Strategi: Network First (untuk semua resource lain, misal Font, CDN, Firebase SDK)
+  // Ini memastikan kita selalu mendapatkan versi terbaru dari resource eksternal.
+  event.respondWith(
+    fetch(event.request)
+      .then(networkResponse => {
+        // Berhasil dari jaringan, simpan ke cache
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, networkResponse.clone());
+        });
+        return networkResponse;
+      })
+      .catch(() => {
+        // Jaringan gagal, coba ambil dari cache sebagai fallback
+        return caches.match(event.request)
+          .then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse; // Sajikan dari cache jika jaringan gagal
+            }
+            // Jika tidak ada di cache sama sekali, gagal
+            console.error('Service Worker: Gagal mengambil dari jaringan & cache:', event.request.url);
+            // Anda bisa return halaman offline di sini
+          });
+      })
+  );
 });
 
+
 // Event: Notification Click
-// (Saat ini kita tidak menambahkan aksi, tapi ini tempatnya)
 self.addEventListener('notificationclick', (event) => {
   console.log('Notifikasi diklik:', event.notification.tag);
   event.notification.close();
   
   // Fokus ke aplikasi jika sudah terbuka
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Cek apakah ada window yang sudah terbuka
       for (const client of clientList) {
-        if (client.url === './' && 'focus' in client) {
+        // Sesuaikan URL ini jika app Anda di-host di sub-path
+        if (client.url.includes('index.html') || client.url.endsWith('/')) {
           return client.focus();
         }
       }
+      // Jika tidak ada window terbuka, buka baru
       if (clients.openWindow) {
-        return clients.openWindow('./');
+        return clients.openWindow('./'); // Buka halaman utama
       }
     })
   );
