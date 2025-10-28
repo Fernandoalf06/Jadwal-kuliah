@@ -1,58 +1,114 @@
-// --- DATABASE ---
-// In a real app, this would come from an API.
+// --- IMPOR FIREBASE ---
+// Impor fungsi yang Anda perlukan dari Firebase SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  signInAnonymously,
+  signInWithCustomToken
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  onSnapshot,
+  deleteDoc,
+  setLogLevel
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+// --- KONFIGURASI FIREBASE ---
+// Dapatkan config dari global variable (disediakan oleh Canvas)
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+// Dapatkan token auth awal
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// Dapatkan App ID
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+// Inisialisasi Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+setLogLevel('Debug'); // Aktifkan log debug Firebase
+
+// --- DATABASE JADWAL (LOKAL) ---
 const allClasses = [
   // Monday
-  { id: 'M1', day: 'Monday', startTime: '09:30', endTime: '12:30', subject: 'Teknik Kompilasi **', lecturer: 'Mara Nugraha', location: 'E131', color: 'primary-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=102506', lecturerEmail: 'dosen@example.com' },
-  { id: 'M2', day: 'Monday', startTime: '13:30', endTime: '15:30', subject: 'Pengolahan Citra **', lecturer: 'Noor Vika Hizviani', location: 'E131', color: 'emerald-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=100430', lecturerEmail: 'dosen@example.com' },
-  { id: 'M3', day: 'Monday', startTime: '15:30', endTime: '17:30', subject: 'Bahasa Inggris Bisnis 1', lecturer: 'Hana Fauziah', location: 'E131', color: 'sky-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=102892', lecturerEmail: 'dosen@example.com' },
+  { id: 'M1', day: 'Monday', startTime: '09:30', endTime: '12:30', subject: 'Teknik Kompilasi **', lecturer: 'Mara Nugraha', location: 'E131', color: 'primary-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'M2', day: 'Monday', startTime: '13:30', endTime: '15:30', subject: 'Pengolahan Citra **', lecturer: 'Noor Vika Hizviani', location: 'E131', color: 'emerald-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'M3', day: 'Monday', startTime: '15:30', endTime: '17:30', subject: 'Bahasa Inggris Bisnis 1', lecturer: 'Hana Fauziah', location: 'E131', color: 'sky-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
   
   // Tuesday
-  { id: 'TU1', day: 'Tuesday', startTime: '07:30', endTime: '09:30', subject: 'Pengolahan Citra', lecturer: 'Salman Alfarizi', location: 'Lab F8427', color: 'blue-500', vclassLink: 'https://praktikum-iflab.gunadarma.ac.id/course/view.php?id=597', lecturerEmail: 'dosen@example.com' },
-  { id: 'TU2', day: 'Tuesday', startTime: '13:30', endTime: '15:30', subject: 'Rekayasa Perangkat Lunak 2', lecturer: 'Satya Bara Justitia', location: 'Online', color: 'cyan-500', vclassLink: 'https://praktikum.gunadarma.ac.id/course/view.php?id=64', lecturerEmail: 'dosen@example.com' },
+  { id: 'TU1', day: 'Tuesday', startTime: '07:30', endTime: '09:30', subject: 'Pengolahan Citra', lecturer: 'Salman Alfarizi', location: 'Lab F8427', color: 'blue-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'TU2', day: 'Tuesday', startTime: '13:30', endTime: '15:30', subject: 'Rekayasa Perangkat Lunak 2', lecturer: 'Satya Bara Justitia', location: 'Online', color: 'cyan-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
 
   // Wednesday
-  { id: 'W1', day: 'Wednesday', startTime: '09:30', endTime: '11:30', subject: 'Rekayasa Perangkat Lunak 2 */**', lecturer: 'Linda Handayani', location: 'E332', color: 'amber-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=97517', lecturerEmail: 'dosen@example.com' },
-  { id: 'W2', day: 'Wednesday', startTime: '12:30', endTime: '14:30', subject: 'Algoritma Deep Learning', lecturer: 'Fauziah Supardi', location: 'E348', color: 'rose-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=96457', lecturerEmail: 'dosen@example.com' },
-  { id: 'W3', day: 'Wednesday', startTime: '14:30', endTime: '17:30', subject: 'Pengel. Proyek Perangkat Lunak', lecturer: 'Nuryuliani', location: 'E443', color: 'violet-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=101923', lecturerEmail: 'dosen@example.com' },
+  { id: 'W1', day: 'Wednesday', startTime: '09:30', endTime: '11:30', subject: 'Rekayasa Perangkat Lunak 2 */**', lecturer: 'Linda Handayani', location: 'E332', color: 'amber-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'W2', day: 'Wednesday', startTime: '12:30', endTime: '14:30', subject: 'Algoritma Deep Learning', lecturer: 'Fauziah Supardi', location: 'E348', color: 'rose-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'W3', day: 'Wednesday', startTime: '14:30', endTime: '17:30', subject: 'Pengel. Proyek Perangkat Lunak', lecturer: 'Nuryuliani', location: 'E443', color: 'violet-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
   
   // Thursday
-  { id: 'T1', day: 'Thursday', startTime: 'TBD', endTime: 'TBD', subject: 'Robotika Cerdas', lecturer: 'Team Teaching', location: 'UGTV (V-CLASS)', color: 'indigo-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=96433', lecturerEmail: 'dosen@example.com' },
+  { id: 'T1', day: 'Thursday', startTime: 'TBD', endTime: 'TBD', subject: 'Robotika Cerdas', lecturer: 'Team Teaching', location: 'UGTV (V-CLASS)', color: 'indigo-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
   
   // Friday
-  { id: 'F1', day: 'Friday', startTime: '07:30', endTime: '09:30', subject: 'Praktikum Robotika Cerdas', lecturer: 'Tim Dosen', location: 'V-CLASS', color: 'fuchsia-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=96417', lecturerEmail: 'dosen@example.com' },
+  { id: 'F1', day: 'Friday', startTime: '07:30', endTime: '09:30', subject: 'Praktikum Robotika Cerdas', lecturer: 'Tim Dosen', location: 'V-CLASS', color: 'fuchsia-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
   
   // Saturday
-  { id: 'S1', day: 'Saturday', startTime: '09:30', endTime: '11:30', subject: 'Forensik Teknologi Informasi', lecturer: 'Arum Tri Iswari Purwanti', location: 'G124', color: 'teal-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=98315', lecturerEmail: 'dosen@example.com' },
-  { id: 'S2', day: 'Saturday', startTime: '11:30', endTime: '14:30', subject: 'Pemodelan dan Simulasi', lecturer: 'Koko Bachrudin', location: 'G124', color: 'orange-500', vclassLink: 'https://v-class.gunadarma.ac.id/course/view.php?id=97433', lecturerEmail: 'dosen@example.com' },
+  { id: 'S1', day: 'Saturday', startTime: '09:30', endTime: '11:30', subject: 'Forensik Teknologi Informasi', lecturer: 'Arum Tri Iswari Purwanti', location: 'G124', color: 'teal-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
+  { id: 'S2', day: 'Saturday', startTime: '11:30', endTime: '14:30', subject: 'Pemodelan dan Simulasi', lecturer: 'Koko Bachrudin', location: 'G124', color: 'orange-500', vclassLink: '#', lecturerEmail: 'dosen@example.com' },
 ];
 
- const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
- const daysOfWeekEN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
- const dayIndexMap = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 0 };
- const dayNameMap = { 'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu', 'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu' };
+const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const daysOfWeekEN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const dayIndexMap = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 0 };
+const dayNameMap = { 'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu', 'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu' };
 
 // --- STATE ---
-let currentView = 'weekly'; // 'weekly', 'daily', or 'tasks'
-let currentDailyDay = new Date().getDay(); // 0 (Sun) - 6 (Sat)
+let currentView = 'weekly';
+let currentDailyDay = new Date().getDay();
 let currentSearch = '';
 
-// New State for Features
-let allNotes = JSON.parse(localStorage.getItem('classNotes4IA16') || '{}');
-let allTodos = JSON.parse(localStorage.getItem('classTodos4IA16') || '{}');
+// State untuk Data Firebase (akan diisi saat login)
+let allNotes = {};
+let allTodos = {};
+let userId = null; // ID pengguna yang sedang login
+let notesListener = null; // Penyimpan listener snapshot
+let todosListener = null; // Penyimpan listener snapshot
 
 let currentLiveClassId = null;
 let currentNextClassId = null;
 let nextClassCountdown = '';
 let toastTimeout;
-
-// State Notifikasi
-let sentNotifications = JSON.parse(localStorage.getItem('sentNotifications4IA16') || '{}');
+let sentNotifications = {}; // Direset setiap sesi, kita tidak pakai localStorage lagi
 
 // --- DOM ELEMENTS ---
+// Layar UI
+const authScreen = document.getElementById('auth-screen');
+const loadingScreen = document.getElementById('loading-screen');
+const mainApp = document.getElementById('main-app');
+
+// Form Autentikasi
+const authForm = document.getElementById('auth-form');
+const authEmail = document.getElementById('auth-email');
+const authPassword = document.getElementById('auth-password');
+const authToggle = document.getElementById('auth-toggle');
+const authSubmitBtn = document.getElementById('auth-submit-btn');
+const authMessage = document.getElementById('auth-message');
+const authTitle = document.getElementById('auth-title');
+
+// UI Utama
+const logoutButton = document.getElementById('logout-button');
 const liveClassBanner = document.getElementById('live-class-banner');
-const liveClassContent = document.getElementById('live-class-content');
 const scheduleGrid = document.getElementById('schedule-grid');
-const tasksView = document.getElementById('tasks-view'); // New Tasks View
+const tasksView = document.getElementById('tasks-view');
 const noResultsEl = document.getElementById('no-results');
 const searchInput = document.getElementById('search-all');
 const viewToggleButtons = document.querySelectorAll('.btn-toggle button');
@@ -61,7 +117,7 @@ const daySelect = document.getElementById('day-select');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const darkModeIcon = document.getElementById('dark-mode-icon');
 
-// Unified Details Modal DOM Elements
+// Modal Detail
 const detailsModal = document.getElementById('details-modal');
 const detailsModalContent = detailsModal.querySelector('.modal-content');
 const closeDetailsModalBtn = document.getElementById('close-details-modal-btn');
@@ -69,37 +125,290 @@ const closeDetailsModalBtnBottom = document.getElementById('close-details-modal-
 const detailsModalClassId = document.getElementById('details-modal-class-id');
 const detailsModalSubjectTitle = document.getElementById('details-modal-subject-title');
 
-// Tab Elements
+// Tab Modal
 const tabBtnNotes = document.getElementById('tab-btn-notes');
 const tabBtnTodos = document.getElementById('tab-btn-todos');
 const notesPanel = document.getElementById('notes-panel');
 const todoPanel = document.getElementById('todo-panel');
 
-// Notes Panel Elements
+// Panel Catatan
 const saveNotesBtn = document.getElementById('save-notes-btn');
 const modalNotesTextarea = document.getElementById('modal-notes-textarea');
 
-// ToDo Panel Elements
+// Panel Tugas
 const addTodoForm = document.getElementById('add-todo-form');
 const newTodoInput = document.getElementById('new-todo-input');
-const newTodoDeadline = document.getElementById('new-todo-deadline'); // New Deadline Input
-const addTodoBtn = document.getElementById('add-todo-btn');
+const newTodoDeadline = document.getElementById('new-todo-deadline');
 const todoListContainer = document.getElementById('todo-list-container');
 
-// Toast DOM Elements
+// Toast
 const toastEl = document.getElementById('toast');
 const toastContent = document.getElementById('toast-content');
 const toastIcon = document.getElementById('toast-icon');
 const toastMessage = document.getElementById('toast-message');
 
-// --- FUNCTIONS ---
+// --- FUNGSI-FUNGSI UTAMA ---
 
 /**
- * Creates the HTML string for a single class card.
+ * Titik masuk aplikasi. Mengatur listener status autentikasi.
  */
+function initializeAppCore() {
+  // Daftarkan Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker terdaftar.', reg))
+        .catch(err => console.log('Pendaftaran Service Worker gagal:', err));
+    });
+  }
+
+  // Listener status autentikasi Firebase
+  onAuthStateChanged(auth, async (user) => {
+    // Hapus listener data lama jika ada
+    if (notesListener) notesListener();
+    if (todosListener) todosListener();
+    
+    if (user) {
+      // --- PENGGUNA LOGIN ---
+      userId = user.uid;
+      console.log('Pengguna login:', userId);
+
+      // Tampilkan loading, sembunyikan auth
+      authScreen.classList.add('hidden');
+      mainApp.classList.add('hidden');
+      loadingScreen.classList.remove('hidden');
+
+      // Muat data pengguna
+      await loadAllUserData();
+
+      // Sembunyikan loading, tampilkan aplikasi
+      loadingScreen.classList.add('hidden');
+      mainApp.classList.remove('hidden');
+
+      // Jalankan logika UI utama
+      runMainAppLogic();
+
+    } else {
+      // --- PENGGUNA LOGOUT ---
+      userId = null;
+      console.log('Pengguna logout.');
+
+      // Reset state lokal
+      allNotes = {};
+      allTodos = {};
+      
+      // Tampilkan layar login
+      loadingScreen.classList.add('hidden');
+      mainApp.classList.add('hidden');
+      authScreen.classList.remove('hidden');
+      
+      // Pastikan listener login disetel
+      setupAuthListeners();
+    }
+  });
+
+  // Coba login dengan token kustom jika ada
+  if (initialAuthToken) {
+    signInWithCustomToken(auth, initialAuthToken).catch((error) => {
+      console.error("Gagal login dengan token:", error);
+      // Jika gagal, biarkan onAuthStateChanged menangani (akan fallback ke anonim atau login manual)
+      if (!auth.currentUser) {
+        signInAnonymously(auth).catch(err => console.error("Gagal login anonim:", err));
+      }
+    });
+  } else if (!auth.currentUser) {
+    // Fallback ke login anonim jika tidak ada token
+    signInAnonymously(auth).catch(err => console.error("Gagal login anonim:", err));
+  }
+}
+
+/**
+ * Mengatur listener untuk data pengguna (Catatan & Tugas) dari Firestore.
+ */
+async function loadAllUserData() {
+  if (!userId) return;
+
+  // Path ke data pengguna
+  const notesPath = `artifacts/${appId}/users/${userId}/notes`;
+  const todosPath = `artifacts/${appId}/users/${userId}/todos`;
+  
+  // Buat promise untuk kedua listener
+  const notesPromise = new Promise((resolve) => {
+    const notesQuery = collection(db, notesPath);
+    notesListener = onSnapshot(notesQuery, (snapshot) => {
+      allNotes = {}; // Reset state lokal
+      snapshot.forEach((doc) => {
+        allNotes[doc.id] = doc.data().text; // Simpan catatan berdasarkan ID kelas
+      });
+      console.log('Data Catatan dimuat/diperbarui.');
+      if(currentView !== 'tasks') renderSchedule(); // Render ulang jika di tampilan jadwal
+      resolve();
+    }, (error) => {
+        console.error("Error memuat catatan:", error);
+        resolve(); // Tetap resolve agar aplikasi lanjut
+    });
+  });
+
+  const todosPromise = new Promise((resolve) => {
+    const todosQuery = collection(db, todosPath);
+    todosListener = onSnapshot(todosQuery, (snapshot) => {
+      allTodos = {}; // Reset state lokal
+      snapshot.forEach((doc) => {
+        allTodos[doc.id] = doc.data().tasks; // Simpan tugas berdasarkan ID kelas
+      });
+      console.log('Data Tugas dimuat/diperbarui.');
+      // Render ulang tampilan yang relevan
+      if(currentView === 'tasks') renderAllTasksView();
+      if(currentView !== 'tasks') renderSchedule();
+      checkDeadlinesToast(); // Cek toast deadline
+      checkTaskDeadlineReminders(); // Cek notifikasi deadline
+      resolve();
+    }, (error) => {
+        console.error("Error memuat tugas:", error);
+        resolve(); // Tetap resolve agar aplikasi lanjut
+    });
+  });
+
+  // Tunggu kedua data setidaknya dimuat sekali
+  await Promise.all([notesPromise, todosPromise]);
+  console.log('Semua data pengguna selesai dimuat.');
+}
+
+/**
+ * Menjalankan logika UI setelah login berhasil dan data dimuat.
+ */
+function runMainAppLogic() {
+  // Setel listener logout
+  logoutButton.addEventListener('click', () => {
+    signOut(auth);
+  });
+  
+  // Setel listener UI utama (pencarian, toggle, dll)
+  setupMainEventListeners();
+
+  // Logika Dark Mode
+  if (localStorage.getItem('darkMode') === 'true' || 
+     (!localStorage.getItem('darkMode') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    setDarkMode(true);
+  } else {
+    setDarkMode(false);
+  }
+  
+  // Kembalikan tampilan terakhir
+  const savedView = localStorage.getItem('lastView4IA16');
+  if (savedView) {
+    currentView = savedView;
+  }
+  
+  // Atur tampilan awal
+  currentDailyDay = new Date().getDay();
+  daySelect.value = currentDailyDay;
+  
+  viewToggleButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === currentView);
+  });
+  
+  dailyViewControls.classList.toggle('hidden', currentView !== 'daily');
+  scheduleGrid.classList.toggle('hidden', currentView === 'tasks');
+  tasksView.classList.toggle('hidden', currentView !== 'tasks');
+
+  if (currentView === 'tasks') {
+    renderAllTasksView();
+    searchInput.disabled = true;
+    searchInput.placeholder = 'Pencarian di non-aktifkan di Tampilan Tugas';
+  } else {
+    renderSchedule();
+    searchInput.disabled = false;
+    searchInput.placeholder = 'Cari mata kuliah atau dosen...';
+  }
+  
+  // Jalankan interval pengecekan notifikasi & status live
+  const checkAllReminders = () => {
+    updateLiveStatusAndReminders();
+    checkTaskDeadlineReminders();
+  };
+  
+  checkAllReminders(); // Jalankan sekali
+  setInterval(checkAllReminders, 60000); // Ulangi setiap menit
+  
+  checkDeadlinesToast(); // Tampilkan toast deadline saat muat
+  
+  // Minta izin notifikasi setelah 5 detik
+  setTimeout(requestNotificationPermission, 5000);
+}
+
+// --- FUNGSI AUTENTIKASI ---
+
+let isLoginMode = true;
+
+/**
+ * Mengatur listener untuk form login/register.
+ */
+function setupAuthListeners() {
+  // Toggle antara Login dan Register
+  authToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    if (isLoginMode) {
+      authTitle.textContent = 'Login';
+      authSubmitBtn.textContent = 'Login';
+      authToggle.textContent = 'Belum punya akun? Daftar';
+    } else {
+      authTitle.textContent = 'Daftar Akun Baru';
+      authSubmitBtn.textContent = 'Daftar';
+      authToggle.textContent = 'Sudah punya akun? Login';
+    }
+    authMessage.textContent = '';
+    authMessage.classList.add('hidden');
+  });
+
+  // Handle submit form
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = authEmail.value;
+    const password = authPassword.value;
+    authMessage.textContent = '';
+    authMessage.classList.add('hidden');
+    authSubmitBtn.disabled = true;
+
+    if (isLoginMode) {
+      // --- Mode Login ---
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Login berhasil, onAuthStateChanged akan menangani sisanya
+          console.log('Login berhasil:', userCredential.user.uid);
+          authSubmitBtn.disabled = false;
+        })
+        .catch((error) => {
+          authMessage.textContent = `Error: ${error.message}`;
+          authMessage.classList.remove('hidden');
+          authSubmitBtn.disabled = false;
+        });
+    } else {
+      // --- Mode Register ---
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Daftar berhasil, onAuthStateChanged akan menangani sisanya
+          console.log('Daftar berhasil:', userCredential.user.uid);
+          authSubmitBtn.disabled = false;
+        })
+        .catch((error) => {
+          authMessage.textContent = `Error: ${error.message}`;
+          authMessage.classList.remove('hidden');
+          authSubmitBtn.disabled = false;
+        });
+    }
+  });
+}
+
+// --- FUNGSI RENDER TAMPILAN ---
+
 function createClassCard(classItem) {
+  if (!classItem) return ''; // Pengaman jika classItem null
+  
   const timeDisplay = (classItem.startTime === 'TBD') ? 'Waktu TBD' : `${classItem.startTime} - ${classItem.endTime}`;
   
+  // Ambil data dari state yang disinkronkan Firebase
   const hasNote = allNotes[classItem.id] && allNotes[classItem.id].trim() !== '';
   const noteIconClass = hasNote ? 'filled' : '';
   
@@ -123,18 +432,22 @@ function createClassCard(classItem) {
   const borderColorClass = `border-${classItem.color}`;
   const textColorClass = `text-${classItem.color.split('-')[0]}-700 dark:text-${classItem.color.split('-')[0]}-400`;
 
+  // Tombol kalender dinonaktifkan jika TBD
+  const calendarBtnDisabled = classItem.startTime === 'TBD' ? 'disabled' : '';
+  const calendarBtnClass = classItem.startTime === 'TBD' ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed' : 'text-primary hover:text-primary-700 dark:hover:text-primary-300';
+  const calendarBtnText = classItem.startTime === 'TBD' ? 'Waktu TBD' : 'Add to Calendar';
+
   return `
     <div class="card bg-white dark:bg-slate-900 rounded-lg shadow-sm overflow-hidden border-l-4 ${borderColorClass} ${cardClass}" data-class-id="${classItem.id}">
-      <!-- Area yang bisa diklik untuk membuka modal -->
-      <div class="card-clickable-area p-4" data-tab="notes">
+      <!-- Bagian atas kartu yang bisa diklik -->
+      <div class="p-4 cursor-pointer card-main-content" data-class-id="${classItem.id}" data-tab="notes">
         <div class="flex justify-between items-start mb-2">
           <span class="text-xs font-semibold uppercase tracking-wider ${textColorClass}">4IA16</span>
           ${statusHTML}
         </div>
         <h3 class="font-semibold text-slate-900 dark:text-slate-100 mb-1">${classItem.subject}</h3>
         
-        <!-- Email Dosen yang Dapat Diklik -->
-        <a href="mailto:${classItem.lecturerEmail}" title="Email ${classItem.lecturer}" class="text-sm text-slate-600 dark:text-slate-400 mb-3 block hover:underline" onclick="(event) => event.stopPropagation()">
+        <a href="mailto:${classItem.lecturerEmail}" title="Email ${classItem.lecturer}" class="text-sm text-slate-600 dark:text-slate-400 mb-3 block hover:underline" data-action="email">
           ${classItem.lecturer}
         </a>
         
@@ -148,15 +461,14 @@ function createClassCard(classItem) {
         </div>
       </div>
       
-      <!-- Tombol Aksi Bawah -->
+      <!-- Bagian bawah kartu (tombol aksi) -->
       <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 flex justify-between items-center">
-        <button class="flex-1 text-center text-sm font-medium text-primary hover:text-primary-700 dark:hover:text-primary-300 flex items-center justify-center gap-2 btn-add-calendar">
+        <button class="flex-1 text-center text-sm font-medium ${calendarBtnClass} flex items-center justify-center gap-2 btn-add-calendar" ${calendarBtnDisabled}>
           <span class="material-symbols-outlined">add</span>
-          Add to Calendar
+          ${calendarBtnText}
         </button>
         <div class="flex gap-1">
-          <!-- Link V-Class -->
-          <a href="${classItem.vclassLink}" target="_blank" class="p-1 -m-1 text-slate-400 hover:text-primary dark:hover:text-primary-300" title="Buka V-Class/Link" onclick="(event) => event.stopPropagation()">
+          <a href="${classItem.vclassLink}" target="_blank" class="p-1 -m-1 text-slate-400 hover:text-primary dark:hover:text-primary-300" title="Buka V-Class/Link" data-action="link">
             <span class="material-symbols-outlined">link</span>
           </a>
           <button class="p-1 -m-1 text-slate-400 hover:text-primary dark:hover:text-primary-300 btn-open-details relative" data-tab="todos" title="Daftar Tugas">
@@ -172,58 +484,49 @@ function createClassCard(classItem) {
   `;
 }
 
-/**
- * Menampilkan banner untuk kelas yang sedang berlangsung.
- */
 function renderLiveClassBanner() {
   if (currentLiveClassId) {
     const classItem = allClasses.find(c => c.id === currentLiveClassId);
-    if (!classItem) return;
-
-    liveClassContent.innerHTML = `
-      <div class="flex-grow">
-        <span class="flex items-center text-sm font-semibold text-blue-800 dark:text-blue-200">
-          <span class="material-symbols-outlined !text-[18px] mr-1 animate-pulse">sensors</span>
-          SEDANG BERLANGSUNG
-        </span>
-        <h4 class="font-semibold text-slate-900 dark:text-slate-100">${classItem.subject}</h4>
-        <p class="text-sm text-slate-600 dark:text-slate-300">
-          ${classItem.location} • Berakhir pkl ${classItem.endTime}
-        </p>
-      </div>
-      <div class="flex flex-shrink-0 gap-2 mt-3 sm:mt-0">
-        <a href="${classItem.vclassLink}" target="_blank" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-100 rounded-md shadow-sm hover:bg-white dark:hover:bg-slate-700 text-sm font-medium">
-          Buka Link
-        </a>
-        <button class="inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-100 rounded-md shadow-sm hover:bg-white dark:hover:bg-slate-700 text-sm font-medium btn-open-details" data-tab="notes" data-class-id="${classItem.id}">
-          Catatan
-        </button>
-      </div>
-    `;
-    liveClassBanner.classList.remove('hidden');
+    if (classItem) {
+      liveClassBanner.innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="live-status bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">SEKARANG</span>
+              <span class="font-semibold text-slate-900 dark:text-slate-100">${classItem.subject}</span>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 ml-12 sm:ml-0">
+              di ${classItem.location} (berakhir pkl ${classItem.endTime})
+            </p>
+          </div>
+          <div class="flex-shrink-0 flex items-center gap-3">
+            <a href="${classItem.vclassLink}" target="_blank" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+              <span class="material-symbols-outlined">link</span> Buka Link
+            </a>
+            <button class="inline-flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 btn-open-details" data-class-id="${classItem.id}" data-tab="notes">
+              <span class="material-symbols-outlined">note</span> Catatan
+            </button>
+          </div>
+        </div>
+      `;
+      liveClassBanner.classList.remove('hidden');
+    }
   } else {
     liveClassBanner.classList.add('hidden');
-    liveClassContent.innerHTML = '';
+    liveClassBanner.innerHTML = '';
   }
 }
 
-/**
- * Filters the class list based on current search and filters.
- */
 function getFilteredClasses() {
   return allClasses.filter(classItem => {
     const searchMatch = currentSearch === '' ||
       classItem.subject.toLowerCase().includes(currentSearch) ||
       classItem.lecturer.toLowerCase().includes(currentSearch) ||
       classItem.location.toLowerCase().includes(currentSearch);
-    
     return searchMatch;
   });
 }
 
-/**
- * Renders the entire schedule grid based on current state.
- */
 function renderSchedule() {
   scheduleGrid.innerHTML = '';
   const filteredClasses = getFilteredClasses();
@@ -234,7 +537,6 @@ function renderSchedule() {
       scheduleGrid.classList.remove('xl:grid-cols-1', 'max-w-2xl', 'mx-auto');
       scheduleGrid.classList.add('sm:grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4', 'xl:grid-cols-6');
   } else {
-      // Daily view
       daysToRender = [daysOfWeekEN[currentDailyDay]];
       scheduleGrid.classList.remove('sm:grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4', 'xl:grid-cols-6');
       scheduleGrid.classList.add('xl:grid-cols-1', 'max-w-2xl', 'mx-auto');
@@ -274,37 +576,29 @@ function renderSchedule() {
     scheduleGrid.appendChild(dayColumn);
   }
   
-  if (totalClassesRendered === 0 && filteredClasses.length < allClasses.length) {
-    noResultsEl.classList.remove('hidden');
-  } else {
-    noResultsEl.classList.add('hidden');
-  }
+  noResultsEl.classList.toggle('hidden', totalClassesRendered > 0 || filteredClasses.length === allClasses.length);
 }
 
-/**
- * Renders the new "All Tasks" view.
- */
 function renderAllTasksView() {
   tasksView.innerHTML = '';
   
   const allActiveTasks = Object.entries(allTodos)
     .flatMap(([classId, todos]) => 
-      todos.map(todo => ({
+      (todos || []).map(todo => ({
         ...todo,
         classId: classId,
         classItem: allClasses.find(c => c.id === classId)
       }))
     )
-    .filter(task => !task.completed && task.classItem); // Filter out completed and tasks from deleted classes
+    .filter(task => !task.completed && task.classItem);
 
-  // Sort tasks: by deadline (earliest first), nulls last
   allActiveTasks.sort((a, b) => {
     if (a.deadline && b.deadline) {
       return new Date(a.deadline) - new Date(b.deadline);
     }
-    if (a.deadline) return -1; // a has deadline, b doesn't
-    if (b.deadline) return 1;  // b has deadline, a doesn't
-    return 0; // neither has deadline
+    if (a.deadline) return -1;
+    if (b.deadline) return 1;
+    return 0;
   });
   
   if (allActiveTasks.length === 0) {
@@ -318,7 +612,6 @@ function renderAllTasksView() {
     return;
   }
   
-  // Group tasks by deadline
   const { today, tomorrow, thisWeek, nextWeek, later, noDeadline } = groupTasksByDeadline(allActiveTasks);
 
   tasksView.innerHTML += createTaskGroupHTML('Jatuh Tempo Hari Ini', today, 'text-red-600 dark:text-red-400');
@@ -329,9 +622,6 @@ function renderAllTasksView() {
   tasksView.innerHTML += createTaskGroupHTML('Tanpa Deadline', noDeadline, 'text-slate-500 dark:text-slate-500');
 }
 
-/**
- * Helper for renderAllTasksView: Groups tasks by deadline.
- */
 function groupTasksByDeadline(tasks) {
   const groups = { today: [], tomorrow: [], thisWeek: [], nextWeek: [], later: [], noDeadline: [] };
   const now = new Date();
@@ -342,7 +632,8 @@ function groupTasksByDeadline(tasks) {
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
   
   const endOfWeek = new Date(now);
-  endOfWeek.setDate(now.getDate() + (6 - now.getDay()) + 1); // End of Sunday
+  endOfWeek.setDate(now.getDate() + (6 - now.getDay()) + 1); // Akhir hari Minggu
+  endOfWeek.setHours(23, 59, 59, 999);
   
   const endOfNextWeek = new Date(endOfWeek);
   endOfNextWeek.setDate(endOfWeek.getDate() + 7);
@@ -353,7 +644,8 @@ function groupTasksByDeadline(tasks) {
       continue;
     }
     
-    const taskDate = new Date(task.deadline + 'T00:00:00'); // Set to start of day
+    // Penting: Gunakan T23:59:59 untuk menghindari masalah timezone
+    const taskDate = new Date(task.deadline + 'T23:59:59'); 
     
     if (task.deadline === todayStr) {
       groups.today.push(task);
@@ -370,9 +662,6 @@ function groupTasksByDeadline(tasks) {
   return groups;
 }
 
-/**
- * Helper for renderAllTasksView: Creates HTML for a task group.
- */
 function createTaskGroupHTML(title, tasks, titleColor) {
   if (tasks.length === 0) return '';
   
@@ -399,9 +688,8 @@ function createTaskGroupHTML(title, tasks, titleColor) {
   `;
 }
 
-/**
- * Updates the "is-live" and "is-next" status AND checks for class reminders.
- */
+// --- FUNGSI STATUS & PENGINGAT ---
+
 function updateLiveStatusAndReminders() {
     const now = new Date();
     const currentDayIndex = now.getDay();
@@ -426,18 +714,14 @@ function updateLiveStatusAndReminders() {
         const startTimeInt = parseInt(classItem.startTime.replace(':', ''), 10);
         const endTimeInt = parseInt(classItem.endTime.replace(':', ''), 10);
 
-        // Cek kelas yang sedang berlangsung
         if (!foundLive && currentTimeInt >= startTimeInt && currentTimeInt < endTimeInt) {
             currentLiveClassId = classItem.id;
             foundLive = true;
-            // Hapus notifikasi terkirim jika kelas sudah dimulai
             if (sentNotifications['class-' + classItem.id]) {
               delete sentNotifications['class-' + classItem.id];
-              saveSentNotifications();
             }
         }
 
-        // Cek kelas selanjutnya
         if (!foundLive && !foundNext && currentTimeInt < startTimeInt) {
             currentNextClassId = classItem.id;
             foundNext = true;
@@ -459,7 +743,6 @@ function updateLiveStatusAndReminders() {
             
             // Logika Notifikasi Kelas
             const notificationId = 'class-' + classItem.id;
-            // Kirim notifikasi jika 60 menit sebelum mulai
             if (diffMins > 0 && diffMins <= 60 && !sentNotifications[notificationId]) {
               showBrowserNotification(
                 `Kelas Segera Mulai: ${classItem.subject}`,
@@ -475,17 +758,12 @@ function updateLiveStatusAndReminders() {
         }
     }
     
-    // Panggil render banner
     renderLiveClassBanner();
-    // Render ulang jadwal jika perlu
     if (currentView !== 'tasks') {
        renderSchedule();
     }
 }
 
-/**
- * Pengecekan Deadline Tugas untuk Notifikasi
- */
 function checkTaskDeadlineReminders() {
   const now = new Date();
   const allActiveTasks = Object.values(allTodos)
@@ -493,20 +771,19 @@ function checkTaskDeadlineReminders() {
     .filter(task => !task.completed && task.deadline);
 
   for (const task of allActiveTasks) {
-    const deadlineTime = new Date(task.deadline + 'T09:00:00'); // Set pengingat jam 9 pagi H-1
-    deadlineTime.setDate(deadlineTime.getDate() - 1); // Mundur 1 hari
+    const deadlineTime = new Date(task.deadline + 'T00:00:00'); // Awal hari deadline
     
     const diffMs = deadlineTime.getTime() - now.getTime();
-    const diffMins = Math.ceil(diffMs / 60000);
+    const diffMins = Math.ceil(diffMs / 60000); // Menit tersisa
     const notificationId = 'task-' + task.id;
 
-    // Kirim notifikasi jika 1 hari sebelumnya (misal, < 60 menit dari jam 9 pagi H-1)
-    if (diffMins > 0 && diffMins <= 60 && !sentNotifications[notificationId]) {
+    // Kirim notifikasi jika deadline kurang dari 24 jam (1440 menit)
+    if (diffMins > 0 && diffMins <= 1440 && !sentNotifications[notificationId]) {
       const classItem = allClasses.find(c => c.id === task.classId);
       showBrowserNotification(
         `Deadline Tugas: ${task.text}`,
         {
-          body: `Untuk mata kuliah: ${classItem.subject}\nJatuh tempo: Besok`,
+          body: `Mata kuliah: ${classItem.subject}\nJatuh tempo: Besok`,
           icon: 'https://placehold.co/192x192/f59e0b/white?text=!',
           tag: notificationId
         },
@@ -516,398 +793,6 @@ function checkTaskDeadlineReminders() {
   }
 }
 
-/**
- * Handles Google Calendar link generation.
- */
-function getGoogleCalendarLink(classItem) {
-  const { subject, startTime, endTime, day, location } = classItem;
-  const baseUrl = 'https://www.google.com/calendar/render?action=TEMPLATE';
-
-  let startDate, endDate;
-
-  if (startTime === 'TBD') {
-    const nextDay = getNextDay(dayIndexMap[day]);
-    const dateStr = `${nextDay.getFullYear()}${String(nextDay.getMonth() + 1).padStart(2, '0')}${String(nextDay.getDate()).padStart(2, '0')}`;
-    startDate = dateStr;
-    endDate = dateStr;
-  } else {
-    const [startHour, startMin] = startTime.split(':');
-    const [endHour, endMin] = endTime.split(':');
-    const nextDay = getNextDay(dayIndexMap[day]);
-    const nextDayEnd = new Date(nextDay.getTime());
-    const startDateTime = new Date(nextDay.setHours(startHour, startMin, 0, 0));
-    const endDateTime = new Date(nextDayEnd.setHours(endHour, endMin, 0, 0));
-    startDate = startDateTime.toISOString().replace(/-|:|\.\d+/g, '');
-    endDate = endDateTime.toISOString().replace(/-|:|\.\d+/g, '');
-  }
-
-  const params = new URLSearchParams({
-    text: subject,
-    dates: `${startDate}/${endDate}`,
-    details: `Mata Kuliah: ${subject}\nDosen: ${classItem.lecturer}\nKelas: 4IA16`,
-    location: location,
-    recur: `RRULE:FREQ=WEEKLY;BYDAY=${day.substring(0, 2).toUpperCase()}`,
-    ctz: 'Asia/Jakarta'
-  });
-
-  return `${baseUrl}&${params.toString()}`;
-}
-
-/**
- * Helper to get the next date for a given weekday.
- */
-function getNextDay(dayIndex) {
-  const today = new Date();
-  const todayIndex = today.getDay();
-  const diff = dayIndex - todayIndex;
-  
-  const nextDay = new Date(today.getTime()); 
-  if (diff > 0) {
-    nextDay.setDate(today.getDate() + diff);
-  } else if (diff < 0) {
-    nextDay.setDate(today.getDate() + diff + 7);
-  } else {
-    const now = new Date();
-    const currentTimeInt = now.getHours() * 100 + now.getMinutes();
-    const lastClassTime = Math.max(...allClasses
-        .filter(c => c.day === daysOfWeekEN[dayIndex] && c.endTime !== 'TBD')
-        .map(c => parseInt(c.endTime.replace(':', ''), 10))
-    , 0);
-    
-    if (currentTimeInt > lastClassTime && lastClassTime !== 0) {
-         nextDay.setDate(today.getDate() + 7);
-    }
-  }
-  return nextDay;
-}
-
-// --- Unified Details Modal Functions ---
-
-function openDetailsModal(classId, initialTab = 'notes') {
-    const classItem = allClasses.find(c => c.id === classId);
-    if (!classItem) return;
-    
-    // Set common info
-    detailsModalClassId.value = classId;
-    detailsModalSubjectTitle.textContent = classItem.subject;
-    
-    // Populate notes
-    modalNotesTextarea.value = allNotes[classId] || '';
-    
-    // Populate todos
-    renderTodoList(classId);
-    
-    // Show modal
-    detailsModal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => {
-      detailsModalContent.style.transform = 'scale(1)';
-      detailsModalContent.style.opacity = '1';
-    }, 10);
-    
-    // Set initial tab
-    showTab(initialTab);
-}
-
-function closeDetailsModal() {
-    detailsModalContent.classList.add('modal-closing');
-    setTimeout(() => {
-        detailsModal.classList.add('hidden');
-        document.body.style.overflow = '';
-        detailsModalContent.classList.remove('modal-closing');
-        
-        // Clear deadline input
-        newTodoDeadline.value = '';
-        newTodoInput.value = '';
-    }, 200);
-}
-
-function showTab(tabName) {
-    if (tabName === 'notes') {
-        notesPanel.classList.remove('hidden');
-        todoPanel.classList.add('hidden');
-        tabBtnNotes.classList.add('active');
-        tabBtnTodos.classList.remove('active');
-    } else {
-        notesPanel.classList.add('hidden');
-        todoPanel.classList.remove('hidden');
-        tabBtnNotes.classList.remove('active');
-        tabBtnTodos.classList.add('active');
-        newTodoInput.focus();
-    }
-}
-
-// --- Notes Functions ---
-
-function saveNotes() {
-    const classId = detailsModalClassId.value;
-    const noteText = modalNotesTextarea.value;
-    
-    if (noteText.trim() === '') {
-        delete allNotes[classId];
-    } else {
-        allNotes[classId] = noteText;
-    }
-    
-    localStorage.setItem('classNotes4IA16', JSON.stringify(allNotes));
-    
-    // Update card icon
-    const card = scheduleGrid.querySelector(`.card[data-class-id="${classId}"]`);
-    if (card) {
-        const icon = card.querySelector('.btn-open-details[data-tab="notes"] span');
-        if (noteText.trim() === '') {
-            icon.classList.remove('filled');
-        } else {
-            icon.classList.add('filled');
-        }
-    }
-    
-    showToast("Catatan disimpan!");
-}
-
-// --- To-Do Functions ---
-
-/**
- * Renders the full list (on modal open or toggle)
- */
-function renderTodoList(classId) {
-    todoListContainer.innerHTML = '';
-    const todos = allTodos[classId] || [];
-    
-    if (todos.length === 0) {
-        todoListContainer.innerHTML = `<p class="text-slate-500 dark:text-slate-400 text-center py-4">Belum ada tugas.</p>`;
-        return;
-    }
-    
-    // Sort: active first, then by deadline (nulls last)
-    todos.sort((a, b) => {
-        if (a.completed !== b.completed) {
-            return a.completed - b.completed;
-        }
-        if (a.deadline && b.deadline) {
-            return new Date(a.deadline) - new Date(b.deadline);
-        }
-        return a.deadline ? -1 : 1;
-    });
-
-    todos.forEach(todo => {
-        const todoEl = createTodoElement(todo);
-        todoListContainer.appendChild(todoEl);
-    });
-}
-
-/**
- * Creates a DOM element for a single todo
- */
-function createTodoElement(todo) {
-  const todoEl = document.createElement('div');
-  todoEl.className = `todo-item p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 ${todo.completed ? 'completed' : ''}`;
-  todoEl.dataset.todoId = todo.id;
-  
-  const deadlineHTML = todo.deadline 
-    ? `<div class="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-8">
-         <span class="material-symbols-outlined !text-[16px] -mb-[3px]">calendar_today</span>
-         ${formatDate(todo.deadline)} (${getDaysRemaining(todo.deadline)})
-       </div>`
-    : '';
-  
-  todoEl.innerHTML = `
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <input type="checkbox" data-todo-id="${todo.id}" class="todo-checkbox w-5 h-5 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 dark:bg-slate-700" ${todo.completed ? 'checked' : ''}>
-            <label class="flex-1 text-slate-800 dark:text-slate-200 cursor-pointer todo-text-label" data-todo-id="${todo.id}">${todo.text}</label>
-        </div>
-        <button data-todo-id="${todo.id}" class="todo-delete-btn text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1">
-            <span class="material-symbols-outlined">delete</span>
-        </button>
-    </div>
-    ${deadlineHTML}
-  `;
-  return todoEl;
-}
-
-/**
- * Adds a new todo item with animation
- */
-function addTodo(event) {
-    event.preventDefault(); // Prevent form submission
-    const classId = detailsModalClassId.value;
-    const text = newTodoInput.value.trim();
-    const deadline = newTodoDeadline.value || null; // Get deadline value
-    
-    if (text === '') return;
-    
-    if (!allTodos[classId]) {
-        allTodos[classId] = [];
-    }
-    
-    const newTodo = {
-        id: `todo-${Date.now()}`,
-        text: text,
-        completed: false,
-        deadline: deadline // Save deadline
-    };
-    
-    allTodos[classId].push(newTodo);
-    saveTodos();
-    
-    const emptyMsg = todoListContainer.querySelector('p');
-    if (emptyMsg) emptyMsg.remove();
-    
-    const todoEl = createTodoElement(newTodo);
-    todoEl.classList.add('todo-item-entering');
-    todoListContainer.appendChild(todoEl);
-    
-    // Re-sort the list in the DOM after animation
-    setTimeout(() => {
-      renderTodoList(classId); // This re-sorts everything
-    }, 300); 
-    
-    updateTodoBadge(classId);
-    newTodoInput.value = '';
-    newTodoDeadline.value = ''; // Clear deadline input
-    
-    showToast("Tugas berhasil ditambahkan!");
-}
-
-/**
- * Toggles a todo's completed state
- */
-function toggleTodo(classId, todoId) {
-    const todo = allTodos[classId]?.find(t => t.id === todoId);
-    if (todo) {
-        todo.completed = !todo.completed;
-        saveTodos();
-        renderTodoList(classId); // Re-render to sort list
-        updateTodoBadge(classId);
-        
-        // Hapus notifikasi jika tugas selesai
-        const notificationId = 'task-' + todo.id;
-        if (todo.completed && sentNotifications[notificationId]) {
-          delete sentNotifications[notificationId];
-          saveSentNotifications();
-        }
-        
-        // Re-render tasks view if it's active
-        if(currentView === 'tasks') {
-          renderAllTasksView();
-        }
-    }
-}
-
-/**
- * Deletes a todo item with animation
- */
-function deleteTodo(classId, todoId, element) {
-    element.classList.add('todo-item-exiting');
-    
-    setTimeout(() => {
-      element.remove();
-      allTodos[classId] = allTodos[classId]?.filter(t => t.id !== todoId);
-      saveTodos();
-      updateTodoBadge(classId);
-      
-      if (!allTodos[classId] || allTodos[classId].length === 0) {
-         todoListContainer.innerHTML = `<p class="text-slate-500 dark:text-slate-400 text-center py-4">Belum ada tugas.</p>`;
-      }
-      
-      // Hapus notifikasi jika tugas dihapus
-      const notificationId = 'task-' + todoId;
-      if (sentNotifications[notificationId]) {
-        delete sentNotifications[notificationId];
-        saveSentNotifications();
-      }
-      
-      // Re-render tasks view if it's active
-      if(currentView === 'tasks') {
-        renderAllTasksView();
-      }
-    }, 300);
-}
-
-/**
- * Replaces a todo label with an input field for editing.
- */
-function editTodoText(labelElement) {
-    const todoId = labelElement.dataset.todoId;
-    const currentText = labelElement.textContent;
-    
-    const inputElement = document.createElement('input');
-    inputElement.type = 'text';
-    inputElement.value = currentText;
-    inputElement.className = 'todo-edit-input';
-    
-    const labelContainer = labelElement.parentElement;
-    labelContainer.replaceChild(inputElement, labelElement);
-    inputElement.focus();
-    
-    // Save on blur
-    inputElement.addEventListener('blur', () => {
-        saveTodoEdit(inputElement, todoId);
-    });
-    
-    // Save on Enter, cancel on Escape
-    inputElement.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            inputElement.blur(); // Triggers the blur event
-        } else if (e.key === 'Escape') {
-            // Revert
-            labelContainer.replaceChild(labelElement, inputElement);
-        }
-    });
-}
-
-/**
- * Saves the edited todo text.
- */
-function saveTodoEdit(inputElement, todoId) {
-    const classId = detailsModalClassId.value;
-    const newText = inputElement.value.trim();
-    const todo = allTodos[classId]?.find(t => t.id === todoId);
-    
-    if (todo && newText) {
-        todo.text = newText;
-        saveTodos();
-    }
-    
-    // Re-render the list to show the label again
-    renderTodoList(classId);
-    
-    // Re-render tasks view if it's active
-    if(currentView === 'tasks') {
-      renderAllTasksView();
-    }
-}
-
-function saveTodos() {
-    localStorage.setItem('classTodos4IA16', JSON.stringify(allTodos));
-}
-
-function saveSentNotifications() {
-  localStorage.setItem('sentNotifications4IA16', JSON.stringify(sentNotifications));
-}
-
-function updateTodoBadge(classId) {
-    const card = scheduleGrid.querySelector(`.card[data-class-id="${classId}"]`);
-    if (!card) return;
-    
-    const todos = allTodos[classId] || [];
-    const activeTodoCount = todos.filter(todo => !todo.completed).length;
-    const badgeBtn = card.querySelector('.btn-open-details[data-tab="todos"]');
-    
-    const existingBadge = badgeBtn.querySelector('.todo-badge');
-    if (existingBadge) {
-        existingBadge.remove();
-    }
-    
-    if (activeTodoCount > 0) {
-        badgeBtn.innerHTML += `<span class="todo-badge">${activeTodoCount}</span>`;
-    }
-}
-
-/**
- * Checks for upcoming deadlines and shows a summary toast.
- */
 function checkDeadlinesToast() {
     const allActiveTasks = Object.values(allTodos)
         .flat()
@@ -935,17 +820,374 @@ function checkDeadlinesToast() {
     }
     
     if (message) {
-        showToast(message, 'warning', 6000); // Show for 6 seconds
+        showToast(message, 'warning', 6000);
     }
 }
 
-// --- General Functions ---
+// --- FUNGSI MODAL DETAIL (CATATAN & TUGAS) ---
+
+function openDetailsModal(classId, initialTab = 'notes') {
+    const classItem = allClasses.find(c => c.id === classId);
+    if (!classItem) return;
+    
+    detailsModalClassId.value = classId;
+    detailsModalSubjectTitle.textContent = classItem.subject;
+    
+    // Ambil catatan dari state
+    modalNotesTextarea.value = allNotes[classId] || '';
+    
+    // Render tugas dari state
+    renderTodoList(classId);
+    
+    detailsModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      detailsModalContent.style.transform = 'scale(1)';
+      detailsModalContent.style.opacity = '1';
+    }, 10);
+    
+    showTab(initialTab);
+}
+
+function closeDetailsModal() {
+    detailsModalContent.classList.add('modal-closing');
+    setTimeout(() => {
+        detailsModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        detailsModalContent.classList.remove('modal-closing');
+        newTodoDeadline.value = '';
+        newTodoInput.value = '';
+    }, 200);
+}
+
+function showTab(tabName) {
+    if (tabName === 'notes') {
+        notesPanel.classList.remove('hidden');
+        todoPanel.classList.add('hidden');
+        tabBtnNotes.classList.add('active');
+        tabBtnTodos.classList.remove('active');
+    } else {
+        notesPanel.classList.add('hidden');
+        todoPanel.classList.remove('hidden');
+        tabBtnNotes.classList.remove('active');
+        tabBtnTodos.classList.add('active');
+        newTodoInput.focus();
+    }
+}
 
 /**
- * Formats a date string (YYYY-MM-DD) to "DD MMMM YYYY" in Indonesian.
+ * Menyimpan catatan ke Firestore.
  */
+async function saveNotes() {
+    if (!userId) return showToast('Error: Anda tidak login.', 'warning');
+    
+    const classId = detailsModalClassId.value;
+    const noteText = modalNotesTextarea.value;
+    const notesPath = `artifacts/${appId}/users/${userId}/notes`;
+    
+    try {
+      if (noteText.trim() === '') {
+        // Hapus catatan jika kosong
+        await deleteDoc(doc(db, notesPath, classId));
+        showToast("Catatan dihapus!");
+      } else {
+        // Simpan catatan
+        await setDoc(doc(db, notesPath, classId), { text: noteText });
+        showToast("Catatan disimpan!");
+      }
+      
+      // onSnapshot akan otomatis memperbarui UI, tapi kita tutup modal
+      closeDetailsModal();
+      
+    } catch (error) {
+      console.error("Error menyimpan catatan:", error);
+      showToast(`Error: ${error.message}`, 'warning');
+    }
+}
+
+// --- FUNGSI-FUNGSI TUGAS (TODO) ---
+
+function renderTodoList(classId) {
+    todoListContainer.innerHTML = '';
+    const todos = allTodos[classId] || [];
+    
+    if (todos.length === 0) {
+        todoListContainer.innerHTML = `<p class="text-slate-500 dark:text-slate-400 text-center py-4">Belum ada tugas.</p>`;
+        return;
+    }
+    
+    // Salin dan urutkan
+    const sortedTodos = [...todos].sort((a, b) => {
+        if (a.completed !== b.completed) {
+            return a.completed - b.completed;
+        }
+        if (a.deadline && b.deadline) {
+            return new Date(a.deadline) - new Date(b.deadline);
+        }
+        return a.deadline ? -1 : 1;
+    });
+
+    sortedTodos.forEach(todo => {
+        const todoEl = createTodoElement(todo);
+        todoListContainer.appendChild(todoEl);
+    });
+}
+
+function createTodoElement(todo) {
+  const todoEl = document.createElement('div');
+  todoEl.className = `todo-item p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 ${todo.completed ? 'completed' : ''}`;
+  todoEl.dataset.todoId = todo.id;
+  
+  const deadlineHTML = todo.deadline 
+    ? `<div class="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-8">
+         <span class="material-symbols-outlined !text-[16px] -mb-[3px]">calendar_today</span>
+         ${formatDate(todo.deadline)} (${getDaysRemaining(todo.deadline)})
+       </div>`
+    : '';
+  
+  todoEl.innerHTML = `
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <input type="checkbox" data-todo-id="${todo.id}" class="todo-checkbox w-5 h-5 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 dark:bg-slate-700 flex-shrink-0" ${todo.completed ? 'checked' : ''}>
+            <label class="flex-1 text-slate-800 dark:text-slate-200 cursor-pointer todo-text-label truncate" data-todo-id="${todo.id}">${todo.text}</label>
+        </div>
+        <button data-todo-id="${todo.id}" class="todo-delete-btn text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 flex-shrink-0">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
+    </div>
+    ${deadlineHTML}
+  `;
+  return todoEl;
+}
+
+function addTodo(event) {
+    event.preventDefault();
+    if (!userId) return showToast('Error: Anda tidak login.', 'warning');
+    
+    const classId = detailsModalClassId.value;
+    const text = newTodoInput.value.trim();
+    const deadline = newTodoDeadline.value || null;
+    
+    if (text === '') return;
+    
+    // Perbarui state lokal
+    if (!allTodos[classId]) {
+        allTodos[classId] = [];
+    }
+    
+    const newTodo = {
+        id: `todo-${Date.now()}`,
+        text: text,
+        completed: false,
+        deadline: deadline
+    };
+    
+    allTodos[classId].push(newTodo);
+    
+    // Simpan ke Firestore
+    saveTodosForClass(classId);
+    
+    // Render ulang list (untuk animasi)
+    const emptyMsg = todoListContainer.querySelector('p');
+    if (emptyMsg) emptyMsg.remove();
+    
+    const todoEl = createTodoElement(newTodo);
+    todoEl.classList.add('todo-item-entering');
+    todoListContainer.appendChild(todoEl);
+    
+    setTimeout(() => {
+      renderTodoList(classId); // Render ulang untuk pengurutan
+    }, 300); 
+    
+    updateTodoBadge(classId);
+    newTodoInput.value = '';
+    newTodoDeadline.value = '';
+    
+    showToast("Tugas berhasil ditambahkan!");
+}
+
+function toggleTodo(classId, todoId) {
+    if (!userId) return;
+    
+    const todo = allTodos[classId]?.find(t => t.id === todoId);
+    if (todo) {
+        todo.completed = !todo.completed;
+        saveTodosForClass(classId); // Simpan ke Firestore
+        
+        // Hapus notifikasi jika tugas selesai
+        if (todo.completed) {
+          const notificationId = 'task-' + todo.id;
+          if (sentNotifications[notificationId]) {
+            delete sentNotifications[notificationId];
+          }
+        }
+        
+        // onSnapshot akan menangani render ulang, tapi kita panggil manual agar instan
+        renderTodoList(classId); 
+        updateTodoBadge(classId);
+        if(currentView === 'tasks') renderAllTasksView();
+    }
+}
+
+function deleteTodo(classId, todoId, element) {
+    if (!userId) return;
+    
+    element.classList.add('todo-item-exiting');
+    
+    setTimeout(() => {
+      allTodos[classId] = allTodos[classId]?.filter(t => t.id !== todoId);
+      saveTodosForClass(classId); // Simpan ke Firestore
+      
+      // Hapus notifikasi
+      const notificationId = 'task-' + todoId;
+      if (sentNotifications[notificationId]) {
+        delete sentNotifications[notificationId];
+      }
+      
+      // onSnapshot akan menangani render, tapi kita panggil manual
+      element.remove();
+      if (!allTodos[classId] || allTodos[classId].length === 0) {
+         todoListContainer.innerHTML = `<p class="text-slate-500 dark:text-slate-400 text-center py-4">Belum ada tugas.</p>`;
+      }
+      updateTodoBadge(classId);
+      if(currentView === 'tasks') renderAllTasksView();
+      
+    }, 300);
+}
+
+function editTodoText(labelElement) {
+    const todoId = labelElement.dataset.todoId;
+    const currentText = labelElement.textContent;
+    
+    const inputElement = document.createElement('input');
+    inputElement.type = 'text';
+    inputElement.value = currentText;
+    inputElement.className = 'todo-edit-input';
+    
+    const labelContainer = labelElement.parentElement;
+    labelContainer.replaceChild(inputElement, labelElement);
+    inputElement.focus();
+    
+    const saveEdit = () => {
+        if (!userId) return;
+        const classId = detailsModalClassId.value;
+        const newText = inputElement.value.trim();
+        const todo = allTodos[classId]?.find(t => t.id === todoId);
+        
+        if (todo && newText && newText !== currentText) {
+            todo.text = newText;
+            saveTodosForClass(classId); // Simpan ke Firestore
+        }
+        
+        // Kembalikan ke label (onSnapshot akan memperbarui, tapi ini instan)
+        labelContainer.replaceChild(labelElement, inputElement);
+        labelElement.textContent = newText || currentText;
+        if(currentView === 'tasks') renderAllTasksView();
+    };
+
+    inputElement.addEventListener('blur', saveEdit);
+    inputElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            inputElement.blur();
+        } else if (e.key === 'Escape') {
+            labelContainer.replaceChild(labelElement, inputElement);
+        }
+    });
+}
+
+/**
+ * Menyimpan seluruh daftar tugas untuk satu kelas ke Firestore.
+ */
+async function saveTodosForClass(classId) {
+    if (!userId) return;
+    const todosPath = `artifacts/${appId}/users/${userId}/todos`;
+    const tasks = allTodos[classId] || [];
+    
+    try {
+      await setDoc(doc(db, todosPath, classId), { tasks: tasks });
+      console.log('Tugas disimpan ke Firestore untuk kelas:', classId);
+    } catch (error) {
+      console.error("Error menyimpan tugas:", error);
+      showToast(`Error menyimpan tugas: ${error.message}`, 'warning');
+    }
+}
+
+function updateTodoBadge(classId) {
+    const card = scheduleGrid.querySelector(`.card[data-class-id="${classId}"]`);
+    if (!card) return;
+    
+    const todos = allTodos[classId] || [];
+    const activeTodoCount = todos.filter(todo => !todo.completed).length;
+    const badgeBtn = card.querySelector('.btn-open-details[data-tab="todos"]');
+    if (!badgeBtn) return;
+    
+    const existingBadge = badgeBtn.querySelector('.todo-badge');
+    if (existingBadge) {
+        existingBadge.remove();
+    }
+    
+    if (activeTodoCount > 0) {
+        badgeBtn.innerHTML += `<span class="todo-badge">${activeTodoCount}</span>`;
+    }
+}
+
+// --- FUNGSI UTILITAS & LAIN-LAIN ---
+
+function getGoogleCalendarLink(classItem) {
+  const { subject, startTime, endTime, day, location } = classItem;
+  if (startTime === 'TBD') return '#'; // Jangan buat link jika TBD
+
+  const baseUrl = 'https://www.google.com/calendar/render?action=TEMPLATE';
+  let startDate, endDate;
+
+  const [startHour, startMin] = startTime.split(':');
+  const [endHour, endMin] = endTime.split(':');
+  const nextDay = getNextDay(dayIndexMap[day]);
+  const nextDayEnd = new Date(nextDay.getTime());
+  const startDateTime = new Date(nextDay.setHours(startHour, startMin, 0, 0));
+  const endDateTime = new Date(nextDayEnd.setHours(endHour, endMin, 0, 0));
+  startDate = startDateTime.toISOString().replace(/-|:|\.\d+/g, '');
+  endDate = endDateTime.toISOString().replace(/-|:|\.\d+/g, '');
+
+  const params = new URLSearchParams({
+    text: subject,
+    dates: `${startDate}/${endDate}`,
+    details: `Mata Kuliah: ${subject}\nDosen: ${classItem.lecturer}\nKelas: 4IA16`,
+    location: location,
+    recur: `RRULE:FREQ=WEEKLY;BYDAY=${day.substring(0, 2).toUpperCase()}`,
+    ctz: 'Asia/Jakarta'
+  });
+
+  return `${baseUrl}&${params.toString()}`;
+}
+
+function getNextDay(dayIndex) {
+  const today = new Date();
+  const todayIndex = today.getDay();
+  const diff = dayIndex - todayIndex;
+  
+  const nextDay = new Date(today.getTime()); 
+  if (diff > 0) {
+    nextDay.setDate(today.getDate() + diff);
+  } else if (diff < 0) {
+    nextDay.setDate(today.getDate() + diff + 7);
+  } else {
+    const now = new Date();
+    const currentTimeInt = now.getHours() * 100 + now.getMinutes();
+    const lastClassTime = Math.max(...allClasses
+        .filter(c => c.day === daysOfWeekEN[dayIndex] && c.endTime !== 'TBD')
+        .map(c => parseInt(c.endTime.replace(':', ''), 10))
+    , 0);
+    
+    if (currentTimeInt > lastClassTime && lastClassTime !== 0) {
+         nextDay.setDate(today.getDate() + 7);
+    }
+  }
+  return nextDay;
+}
+
 function formatDate(dateString) {
-    const date = new Date(dateString + 'T00:00:00'); // Set time to avoid timezone issues
+    const date = new Date(dateString + 'T00:00:00');
     return date.toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'long',
@@ -953,13 +1195,10 @@ function formatDate(dateString) {
     });
 }
 
-/**
- * Calculates days remaining for a deadline.
- */
 function getDaysRemaining(dateString) {
     if (!dateString) return '';
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Start of today
+    now.setHours(0, 0, 0, 0);
     
     const deadline = new Date(dateString + 'T00:00:00');
     
@@ -972,11 +1211,6 @@ function getDaysRemaining(dateString) {
     return `${diffDays} hari lagi`;
 }
 
-/**
- * Shows a toast notification.
- * type: 'success' (default) or 'warning'
- * duration: time in ms. 3000 default.
- */
 function showToast(message, type = 'success', duration = 3000) {
     if (toastTimeout) {
         clearTimeout(toastTimeout);
@@ -986,13 +1220,11 @@ function showToast(message, type = 'success', duration = 3000) {
         }
     }
     
-    // Customize based on type
     if (type === 'warning') {
         toastContent.classList.remove('bg-slate-900', 'dark:bg-slate-100', 'text-white', 'dark:text-slate-900');
         toastContent.classList.add('bg-warning-100', 'dark:bg-warning-900', 'text-warning-800', 'dark:text-warning-100');
         toastIcon.textContent = 'warning';
     } else {
-        // Default success
         toastContent.classList.add('bg-slate-900', 'dark:bg-slate-100', 'text-white', 'dark:text-slate-900');
         toastContent.classList.remove('bg-warning-100', 'dark:bg-warning-900', 'text-warning-800', 'dark:text-warning-100');
         toastIcon.textContent = 'check_circle';
@@ -1029,17 +1261,13 @@ function setDarkMode(isDark) {
     }
 }
 
-// --- Fungsi Notifikasi Browser ---
+// --- FUNGSI NOTIFIKASI BROWSER ---
 
-/**
- * Meminta izin notifikasi kepada pengguna.
- */
 function requestNotificationPermission() {
   if (!('Notification' in window)) {
     console.log('Browser ini tidak mendukung notifikasi desktop.');
     return;
   }
-
   if (Notification.permission === 'default') {
     Notification.requestPermission().then((permission) => {
       if (permission === 'granted') {
@@ -1051,253 +1279,153 @@ function requestNotificationPermission() {
   }
 }
 
-/**
- * Menampilkan notifikasi browser jika diizinkan.
- */
 function showBrowserNotification(title, options, notificationId) {
   if (!('Notification' in window)) {
-    return; // Browser tidak mendukung
+    return; 
   }
 
   if (Notification.permission === 'granted') {
-    // Gunakan service worker untuk menampilkan notifikasi
-    // Ini lebih baik untuk PWA
     navigator.serviceWorker.ready.then((registration) => {
       registration.showNotification(title, options);
     });
-
-    // Tandai sebagai terkirim
     sentNotifications[notificationId] = true;
-    saveSentNotifications();
-    
-  } else if (Notification.permission === 'default') {
-    // Jika belum ditanya, minta izin
-    requestNotificationPermission();
-  }
-  // Jika 'denied', tidak melakukan apa-apa
-}
-
-/**
- * Membersihkan notifikasi lama sekali sehari
- */
-function clearOldNotifications() {
-  const lastCleared = localStorage.getItem('lastClearedNotificationsDay');
-  const today = new Date().toLocaleDateString();
-
-  if (lastCleared !== today) {
-    sentNotifications = {};
-    saveSentNotifications();
-    localStorage.setItem('lastClearedNotificationsDay', today);
-    console.log('Daftar notifikasi terkirim dibersihkan untuk hari ini.');
   }
 }
 
-// --- EVENT LISTENERS ---
+// --- EVENT LISTENERS UI UTAMA ---
 
-// Search
-searchInput.addEventListener('input', (e) => {
-  currentSearch = e.target.value.toLowerCase();
-  // Re-render the correct view
-  if (currentView === 'tasks') {
-    // Note: Search doesn't apply to tasks view, but we could add it.
-    // For now, do nothing.
-  } else {
-    renderSchedule();
-  }
-});
-
-// View Toggle
-viewToggleButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    currentView = button.dataset.view;
-    localStorage.setItem('lastView4IA16', currentView); // Save the view
-    
-    // Update button UI
-    viewToggleButtons.forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
-    
-    // Show/hide relevant parts
-    dailyViewControls.classList.toggle('hidden', currentView !== 'daily');
-    scheduleGrid.classList.toggle('hidden', currentView === 'tasks');
-    tasksView.classList.toggle('hidden', currentView !== 'tasks');
-    noResultsEl.classList.add('hidden'); // Hide no-results
-    
-    // Render the correct view
-    if (currentView === 'tasks') {
-      renderAllTasksView();
-      searchInput.disabled = true; // Disable search for tasks view
-      searchInput.placeholder = 'Pencarian di non-aktifkan di Tampilan Tugas';
-    } else {
+function setupMainEventListeners() {
+  // Hanya pasang listener ini sekali saat aplikasi utama dimuat
+  
+  // Pencarian
+  searchInput.addEventListener('input', (e) => {
+    currentSearch = e.target.value.toLowerCase();
+    if (currentView !== 'tasks') {
       renderSchedule();
-      searchInput.disabled = false;
-      searchInput.placeholder = 'Cari mata kuliah atau dosen...';
     }
   });
-});
 
-// Day Selector
-daySelect.addEventListener('change', (e) => {
-  currentDailyDay = parseInt(e.target.value, 10);
-  renderSchedule();
-});
-
-// Dark Mode
-darkModeToggle.addEventListener('click', () => {
-    setDarkMode(!document.documentElement.classList.contains('dark'));
-});
-
-// Card Actions (Event Delegation)
-scheduleGrid.addEventListener('click', (e) => {
-  const calendarButton = e.target.closest('.btn-add-calendar');
-  const detailsButton = e.target.closest('.btn-open-details');
-  const clickableArea = e.target.closest('.card-clickable-area');
-  
-  const card = e.target.closest('.card');
-  if (!card) return;
-  const classId = card.dataset.classId;
-  
-  if (calendarButton) {
-    e.stopPropagation(); // Hentikan event agar tidak membuka modal
-    const classItem = allClasses.find(c => c.id === classId);
-    if (classItem) {
-      const link = getGoogleCalendarLink(classItem);
-      window.open(link, '_blank');
-    }
-  } 
-  else if (detailsButton) {
-    e.stopPropagation(); // Hentikan event agar tidak membuka modal
-    const tab = detailsButton.dataset.tab; // 'notes' or 'todos'
-    openDetailsModal(classId, tab);
-  }
-  else if (clickableArea) {
-    const tab = clickableArea.dataset.tab; // 'notes'
-    openDetailsModal(classId, tab);
-  }
-});
-
-// Tombol di Live Banner
-liveClassBanner.addEventListener('click', (e) => {
-    const detailsButton = e.target.closest('.btn-open-details');
-    if (detailsButton) {
-        const classId = detailsButton.dataset.classId;
-        const tab = detailsButton.dataset.tab;
-        openDetailsModal(classId, tab);
-    }
-});
-
-// Unified Modal Actions
-closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
-closeDetailsModalBtnBottom.addEventListener('click', closeDetailsModal);
-detailsModal.addEventListener('click', (e) => {
-    if (e.target === detailsModal) closeDetailsModal();
-});
-
-// Tab switching
-tabBtnNotes.addEventListener('click', () => showTab('notes'));
-tabBtnTodos.addEventListener('click', () => showTab('todos'));
-
-// Notes Panel Actions
-saveNotesBtn.addEventListener('click', saveNotes);
-
-// To-Do Panel Actions
-addTodoForm.addEventListener('submit', addTodo); // Changed to form 'submit'
-
-// To-Do List Item Actions (Event Delegation)
-todoListContainer.addEventListener('click', (e) => {
-    const checkbox = e.target.closest('.todo-checkbox');
-    const deleteBtn = e.target.closest('.todo-delete-btn');
-    const label = e.target.closest('.todo-text-label');
-    
-    const classId = detailsModalClassId.value;
-    
-    if (checkbox) {
-        toggleTodo(classId, checkbox.dataset.todoId);
-    }
-    else if (deleteBtn) {
-        const itemEl = e.target.closest('.todo-item');
-        deleteTodo(classId, deleteBtn.dataset.todoId, itemEl);
-    }
-    else if (label) {
-        // Check if another input is already open
-        const existingInput = todoListContainer.querySelector('.todo-edit-input');
-        if (existingInput) {
-            existingInput.blur(); // Save any other open edit first
-        }
-        editTodoText(label);
-    }
-});
-
-// --- INITIALIZATION ---
-function init() {
-  
-  // Pendaftaran Service Worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      // Gunakan path relatif './' agar berfungsi di GitHub Pages
-      navigator.serviceWorker.register('./sw.js') 
-        .then((registration) => {
-          console.log('ServiceWorker Registered with scope: ', registration.scope);
-        })
-        .catch((error) => {
-          console.log('ServiceWorker Registration Failed: ', error);
-        });
+  // Toggle Tampilan
+  viewToggleButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      currentView = button.dataset.view;
+      localStorage.setItem('lastView4IA16', currentView);
+      
+      viewToggleButtons.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      
+      dailyViewControls.classList.toggle('hidden', currentView !== 'daily');
+      scheduleGrid.classList.toggle('hidden', currentView === 'tasks');
+      tasksView.classList.toggle('hidden', currentView !== 'tasks');
+      noResultsEl.classList.add('hidden');
+      
+      if (currentView === 'tasks') {
+        renderAllTasksView();
+        searchInput.disabled = true;
+        searchInput.placeholder = 'Pencarian di non-aktifkan di Tampilan Tugas';
+      } else {
+        renderSchedule();
+        searchInput.disabled = false;
+        searchInput.placeholder = 'Cari mata kuliah atau dosen...';
+      }
     });
-  }
+  });
 
-  // Minta Izin Notifikasi & Bersihkan Notifikasi Lama
-  clearOldNotifications();
-  // Tunda permintaan izin agar tidak terlalu agresif
-  setTimeout(requestNotificationPermission, 5000); // Minta izin setelah 5 detik
-
-  // Restore last view
-  const savedView = localStorage.getItem('lastView4IA16');
-  if (savedView) {
-      currentView = savedView;
-  }
-
-  currentDailyDay = new Date().getDay();
-  daySelect.value = currentDailyDay;
-  
-  if (localStorage.getItem('darkMode') === 'true' || 
-     (!localStorage.getItem('darkMode') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      setDarkMode(true);
-  } else {
-      setDarkMode(false);
-  }
-  
-  // Update view toggle buttons based on currentView
-  viewToggleButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === currentView);
+  // Pilihan Hari
+  daySelect.addEventListener('change', (e) => {
+    currentDailyDay = parseInt(e.target.value, 10);
+    renderSchedule();
   });
   
-  // Show/hide relevant panels based on currentView
-  dailyViewControls.classList.toggle('hidden', currentView !== 'daily');
-  scheduleGrid.classList.toggle('hidden', currentView === 'tasks');
-  tasksView.classList.toggle('hidden', currentView !== 'tasks');
+  // Dark Mode
+  darkModeToggle.addEventListener('click', () => {
+      setDarkMode(!document.documentElement.classList.contains('dark'));
+  });
 
-  // Initial render based on default view
-  if (currentView === 'tasks') {
-    renderAllTasksView();
-    searchInput.disabled = true;
-    searchInput.placeholder = 'Pencarian di non-aktifkan di Tampilan Tugas';
-  } else {
-    renderSchedule();
-    searchInput.disabled = false;
-    searchInput.placeholder = 'Cari mata kuliah atau dosen...';
-  }
+  // Aksi pada Kartu (Event Delegation)
+  scheduleGrid.addEventListener('click', (e) => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const classId = card.dataset.classId;
+    const classItem = allClasses.find(c => c.id === classId);
+
+    const calendarButton = e.target.closest('.btn-add-calendar');
+    const detailsButton = e.target.closest('.btn-open-details');
+    const mainContent = e.target.closest('.card-main-content');
+    const emailLink = e.target.closest('[data-action="email"]');
+    const vclassLink = e.target.closest('[data-action="link"]');
+
+    if (emailLink || vclassLink) {
+      // Biarkan link email dan vclass berfungsi normal
+      return;
+    }
+    
+    if (calendarButton) {
+      if (classItem && classItem.startTime !== 'TBD') {
+        const link = getGoogleCalendarLink(classItem);
+        window.open(link, '_blank');
+      }
+    }
+    else if (detailsButton) {
+      const tab = detailsButton.dataset.tab;
+      openDetailsModal(classId, tab);
+    }
+    else if (mainContent) {
+      // Klik di area utama kartu -> buka modal tab 'notes'
+      openDetailsModal(classId, 'notes');
+    }
+  });
   
-  // Buat satu interval utama yang berjalan setiap menit
-  const checkAllReminders = () => {
-    updateLiveStatusAndReminders();
-    checkTaskDeadlineReminders();
-  };
+  // Aksi pada Banner Live
+  liveClassBanner.addEventListener('click', (e) => {
+      const detailsButton = e.target.closest('.btn-open-details');
+      if (detailsButton) {
+          const classId = detailsButton.dataset.classId;
+          const tab = detailsButton.dataset.tab;
+          openDetailsModal(classId, tab);
+      }
+  });
   
-  checkAllReminders(); // Jalankan sekali saat muat
-  setInterval(checkAllReminders, 60000); // Jalankan setiap 60 detik
+  // Aksi pada Modal Detail
+  closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+  closeDetailsModalBtnBottom.addEventListener('click', closeDetailsModal);
+  detailsModal.addEventListener('click', (e) => {
+      if (e.target === detailsModal) closeDetailsModal();
+  });
   
-  // Panggil toast deadline (yang ini berbeda dari notifikasi)
-  checkDeadlinesToast(); 
+  // Pilihan Tab Modal
+  tabBtnNotes.addEventListener('click', () => showTab('notes'));
+  tabBtnTodos.addEventListener('click', () => showTab('todos'));
+  
+  // Aksi Panel Catatan
+  saveNotesBtn.addEventListener('click', saveNotes);
+  
+  // Aksi Panel Tugas
+  addTodoForm.addEventListener('submit', addTodo);
+  
+  // Aksi Item Tugas (Event Delegation)
+  todoListContainer.addEventListener('click', (e) => {
+      const checkbox = e.target.closest('.todo-checkbox');
+      const deleteBtn = e.target.closest('.todo-delete-btn');
+      const label = e.target.closest('.todo-text-label');
+      
+      const classId = detailsModalClassId.value;
+      
+      if (checkbox) {
+          toggleTodo(classId, checkbox.dataset.todoId);
+      }
+      else if (deleteBtn) {
+          const itemEl = e.target.closest('.todo-item');
+          deleteTodo(classId, deleteBtn.dataset.todoId, itemEl);
+      }
+      else if (label) {
+          const existingInput = todoListContainer.querySelector('.todo-edit-input');
+          if (existingInput) existingInput.blur();
+          editTodoText(label);
+      }
+  });
 }
 
-init();
+// --- MULAI APLIKASI ---
+initializeAppCore();
 

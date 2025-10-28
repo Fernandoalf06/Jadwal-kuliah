@@ -1,22 +1,22 @@
-html.dark {
-  background-color: #0f172a;
-}
-
+/* Mengatur font icon Google */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   font-size: 20px;
 }
 
+/* Style untuk icon yang terisi (filled) */
 .material-symbols-outlined.filled {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Style untuk tombol toggle (Daily/Weekly/Tugas) */
 .btn-toggle>button.active {
-  background-color: #A91D3A;
+  background-color: #A91D3A; /* Warna Primary */
   color: white;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
+/* Transisi dan bayangan untuk kartu jadwal */
 .card {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -26,18 +26,18 @@ html.dark {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Styles for new features */
+/* Style untuk kartu yang sedang berlangsung */
 .card.is-live {
-  border-color: #2563eb;
-  /* Blue-600 */
+  border-color: #2563eb; /* Blue-600 */
   box-shadow: 0 0 15px 0px rgba(59, 130, 246, 0.5);
 }
 
+/* Style untuk kartu yang akan datang */
 .card.is-next {
-  border-color: #16a34a;
-  /* Green-600 */
+   border-color: #16a34a; /* Green-600 */
 }
 
+/* Style untuk label status (SEKARANG / Mulai...) */
 .live-status {
   font-size: 0.75rem;
   font-weight: 600;
@@ -45,21 +45,21 @@ html.dark {
   border-radius: 9999px;
 }
 
-/* Modal styles */
+/* Style untuk overlay modal */
 .modal-overlay {
   transition: opacity 0.2s ease-in-out;
 }
 
+/* Style untuk konten modal */
 .modal-content {
   transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
-
 .modal-content.modal-closing {
   transform: scale(0.95);
   opacity: 0;
 }
 
-/* Toast notification */
+/* Style untuk notifikasi Toast */
 #toast {
   position: fixed;
   bottom: 1.5rem;
@@ -68,23 +68,19 @@ html.dark {
   z-index: 100;
 }
 
-/* Todo list styles */
+/* Style untuk item daftar tugas (To-Do) */
 .todo-item {
   transition: color 0.2s, text-decoration 0.2s;
 }
-
 .todo-item.completed label {
   text-decoration: line-through;
-  color: #64748b;
-  /* slate-500 */
+  color: #64748b; /* slate-500 */
 }
-
 html.dark .todo-item.completed label {
-  color: #475569;
-  /* slate-600 */
+  color: #475569; /* slate-600 */
 }
 
-/* Todo badge */
+/* Style untuk badge notifikasi tugas */
 .todo-badge {
   position: absolute;
   top: -4px;
@@ -95,98 +91,64 @@ html.dark .todo-item.completed label {
   width: 18px;
   height: 18px;
   border-radius: 9999px;
-  background-color: #ef4444;
-  /* red-500 */
+  background-color: #ef4444; /* red-500 */
   color: white;
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
   border: 2px solid white;
 }
-
 html.dark .todo-badge {
-  border-color: #1e293b;
-  /* slate-800 */
+   border-color: #1e293b; /* slate-800 */
 }
 
-/* New Tab styles */
+/* Style untuk tombol Tab di modal */
 .tab-btn {
   padding: 0.75rem 1rem;
   font-weight: 500;
-  color: #64748b;
-  /* slate-500 */
+  color: #64748b; /* slate-500 */
   border-bottom: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
 }
-
 html.dark .tab-btn {
-  color: #94a3b8;
-  /* slate-400 */
+  color: #94a3b8; /* slate-400 */
 }
-
 .tab-btn:hover {
-  color: #1e293b;
-  /* slate-800 */
+  color: #1e293b; /* slate-800 */
 }
-
 html.dark .tab-btn:hover {
-  color: #e2e8f0;
-  /* slate-200 */
+  color: #e2e8f0; /* slate-200 */
 }
-
 .tab-btn.active {
-  color: #A91D3A;
-  /* primary */
-  border-color: #A91D3A;
-  /* primary */
+  color: #A91D3A; /* primary */
+  border-color: #A91D3A; /* primary */
 }
-
 html.dark .tab-btn.active {
-  color: #f47993;
-  /* primary-400 */
-  border-color: #f47993;
-  /* primary-400 */
+  color: #f47993; /* primary-400 */
+  border-color: #f47993; /* primary-400 */
 }
 
-/* Todo animation classes */
+/* Kelas animasi untuk daftar tugas */
 .todo-item-entering {
   animation: todoSlideIn 0.3s ease-out forwards;
 }
-
 .todo-item-exiting {
   animation: todoFadeOut 0.3s ease-in forwards;
 }
 
-/* Todo edit input */
+/* Style untuk input edit tugas */
 .todo-edit-input {
-  width: 100%;
-  font: inherit;
-  padding: 2px 4px;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.25rem;
-  background-color: #f8fafc;
-  color: #0f172a;
+    width: 100%;
+    font: inherit;
+    padding: 2px 4px;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    background-color: #f8fafc;
+    color: #0f172a;
 }
-
 html.dark .todo-edit-input {
-  background-color: #334155;
-  border-color: #475569;
-  color: #f1f5f9;
-}
-
-/* Bagian baru untuk membuat area kartu bisa diklik */
-.card-clickable-area {
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.card-clickable-area:hover {
-  background-color: #f8fafc;
-  /* slate-50 */
-}
-
-html.dark .card-clickable-area:hover {
-  background-color: rgba(30, 41, 59, 0.5);
-  /* dark:bg-slate-800/50 */
+    background-color: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
 }
 
